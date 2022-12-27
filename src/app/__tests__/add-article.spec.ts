@@ -21,9 +21,16 @@ describe('Use Case: Add product in cart', () => {
         excludingTaxPrice: 16.38,
         includingTaxPrice: 18.03,
       },
+      {
+        name: 'USB Flash Drive 64GB',
+        quantity: 1,
+        tax: 1.85,
+        excludingTaxPrice: 9.18,
+        includingTaxPrice: 11.03,
+      },
     ]);
-    thenOnlyTaxTotalIs(1.65);
-    thenIncludingTaxTotalIs(26.77);
+    thenOnlyTaxTotalIs(3.5);
+    thenIncludingTaxTotalIs(37.8);
   });
 });
 
@@ -31,6 +38,7 @@ const setup = () => {
   const cart = new Cart([
     new CartProduct('Apple - Fuji', 2, 4.37, 'essential'),
     new CartProduct('The Stranger in the Lifeboat', 1, 16.38, 'book'),
+    new CartProduct('USB Flash Drive 64GB', 1, 9.18, 'other'),
   ]);
 
   const thenIncludingTaxTotalIs = (expectedTotal: number) => {
@@ -76,7 +84,7 @@ const toIncTaxTotal = (
   return add(includingTaxPriceForOne, oldTotal);
 };
 class CartProduct {
-  private readonly taxPercent = this.type === 'book' ? 0.1 : 0;
+  private readonly taxPercent = TAX_PERCENT_BY_TYPE[this.type];
   readonly tax = calculateTax(this.excludingTaxPrice, this.taxPercent);
   readonly includingTaxPrice = add(this.tax, this.excludingTaxPrice);
 
@@ -84,7 +92,7 @@ class CartProduct {
     readonly name: string,
     readonly quantity: number,
     readonly excludingTaxPrice: number,
-    private readonly type: 'essential' | 'book'
+    private readonly type: 'essential' | 'book' | 'other'
   ) {}
 
   print() {
@@ -102,10 +110,16 @@ type PrintedCartProduct = ReturnType<CartProduct['print']>;
 
 const calculateTax = (excludingTaxPrice: number, taxPercent: number) => {
   const multiplied = excludingTaxPrice * taxPercent;
-  return Math.round(multiplied * ROUND_COEFF) / ROUND_COEFF;
+  return Math.ceil(multiplied * ROUND_COEFF) / ROUND_COEFF;
 };
 
 const ROUND_COEFF = 20;
+
+const TAX_PERCENT_BY_TYPE = {
+  essential: 0,
+  book: 0.1,
+  other: 0.2,
+};
 
 const add = (n1: number, n2: number) => {
   const n = n1 + n2;
