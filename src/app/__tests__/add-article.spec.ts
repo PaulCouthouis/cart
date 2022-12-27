@@ -10,37 +10,27 @@ describe('Use Case: Add product in cart', () => {
       {
         name: 'Apple - Fuji',
         quantity: 2,
-        tax: 3,
-        excludingTaxPrice: 15,
-        includingTaxPrice: 18,
+        tax: 0,
+        excludingTaxPrice: 4.37,
+        includingTaxPrice: 4.37,
       },
       {
-        name: 'Muffin Batt - Carrot Spice',
+        name: 'The Stranger in the Lifeboat',
         quantity: 1,
-        tax: 1,
-        excludingTaxPrice: 4,
-        includingTaxPrice: 5,
+        tax: 1.65,
+        excludingTaxPrice: 16.38,
+        includingTaxPrice: 18.03,
       },
     ]);
-    thenOnlyTaxTotalIs(7);
-    thenIncludingTaxTotalIs(41);
+    thenOnlyTaxTotalIs(1.65);
+    thenIncludingTaxTotalIs(26.77);
   });
 });
 
 const setup = () => {
   const cart = new Cart([
-    new CartProduct({
-      name: 'Apple - Fuji',
-      quantity: 2,
-      tax: 3,
-      excludingTaxPrice: 15,
-    }),
-    new CartProduct({
-      name: 'Muffin Batt - Carrot Spice',
-      quantity: 1,
-      tax: 1,
-      excludingTaxPrice: 4,
-    }),
+    new CartProduct('Apple - Fuji', 2, 4.37, 'essential'),
+    new CartProduct('The Stranger in the Lifeboat', 1, 16.38, 'book'),
   ]);
 
   const thenIncludingTaxTotalIs = (expectedTotal: number) => {
@@ -52,59 +42,72 @@ const setup = () => {
   };
 
   const thenProductsInCartAre = (
-    expectedProducts: Array<CartProduct['values']>
+    expectedProducts: Array<PrintedCartProduct>
   ) => {
-    expect(cart.products).toEqual(expectedProducts);
+    expect(cart.printProducts()).toEqual(expectedProducts);
   };
 
   return { thenIncludingTaxTotalIs, thenOnlyTaxTotalIs, thenProductsInCartAre };
 };
 
 class Cart {
-  readonly products = this.params.map(toValues);
   readonly onlyTaxTotal = this.products.reduce(toOnlyTaxTotal, 0);
   readonly includingTaxTotal = this.products.reduce(toIncTaxTotal, 0);
 
-  constructor(private readonly params: Array<CartProduct>) {}
+  constructor(readonly products: Array<CartProduct>) {}
+
+  printProducts() {
+    return this.products.map(toPrinted);
+  }
 }
 
-const toOnlyTaxTotal = (
-  oldTotal: number,
-  { tax, quantity }: CartProduct['values']
-) => {
+const toPrinted = (cartProduct: CartProduct) => cartProduct.print();
+
+const toOnlyTaxTotal = (oldTotal: number, { tax, quantity }: CartProduct) => {
   const onlyTaxForOne = tax * quantity;
-  return oldTotal + onlyTaxForOne;
+  return add(onlyTaxForOne, oldTotal);
 };
 
 const toIncTaxTotal = (
   oldTotal: number,
-  { includingTaxPrice, quantity }: CartProduct['values']
+  { includingTaxPrice, quantity }: CartProduct
 ) => {
   const includingTaxPriceForOne = includingTaxPrice * quantity;
-  return oldTotal + includingTaxPriceForOne;
+  return add(includingTaxPriceForOne, oldTotal);
 };
-
-const toValues = ({ values }: CartProduct) => values;
-
 class CartProduct {
-  readonly values = Object.freeze({
-    ...this.params,
-    includingTaxPrice: calculateIncludingTaxPrice(this.params),
-  });
+  private readonly taxPercent = this.type === 'book' ? 0.1 : 0;
+  readonly tax = calculateTax(this.excludingTaxPrice, this.taxPercent);
+  readonly includingTaxPrice = add(this.tax, this.excludingTaxPrice);
 
   constructor(
-    private readonly params: {
-      readonly name: string;
-      readonly quantity: number;
-      readonly tax: number;
-      readonly excludingTaxPrice: number;
-    }
+    readonly name: string,
+    readonly quantity: number,
+    readonly excludingTaxPrice: number,
+    private readonly type: 'essential' | 'book'
   ) {}
+
+  print() {
+    return Object.freeze({
+      name: this.name,
+      quantity: this.quantity,
+      tax: this.tax,
+      excludingTaxPrice: this.excludingTaxPrice,
+      includingTaxPrice: this.includingTaxPrice,
+    });
+  }
 }
 
-const calculateIncludingTaxPrice = ({
-  excludingTaxPrice,
-  tax,
-}: CartProduct['params']) => excludingTaxPrice + tax;
+type PrintedCartProduct = ReturnType<CartProduct['print']>;
 
+const calculateTax = (excludingTaxPrice: number, taxPercent: number) => {
+  const multiplied = excludingTaxPrice * taxPercent;
+  return Math.round(multiplied * ROUND_COEFF) / ROUND_COEFF;
+};
 
+const ROUND_COEFF = 20;
+
+const add = (n1: number, n2: number) => {
+  const n = n1 + n2;
+  return Number(n.toFixed(2)); // fix javascript decimal addition (0.1 + 0.2 !== 0.299999999)
+};
