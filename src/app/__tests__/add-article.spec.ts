@@ -22,13 +22,13 @@ describe('Use Case: Add product in cart', () => {
         includingTaxPrice: 5,
       },
     ]);
-    thenOnlyTaxTotalIs(10);
+    thenOnlyTaxTotalIs(7);
     thenIncludingTaxTotalIs(100);
   });
 });
 
 const setup = () => {
-  const cart = new Cart(100, 10, [
+  const cart = new Cart(100, [
     new AddedProduct({
       name: 'Apple - Fuji',
       quantity: 2,
@@ -59,11 +59,11 @@ const setup = () => {
 };
 
 class Cart {
+  private readonly onlyTaxTotal = this.addedProducts.reduce(toOnlyTaxTotal, 0);
   private readonly products = this.addedProducts.map(toCartProduct);
 
   constructor(
     private readonly includingTaxTotal: number,
-    private readonly onlyTaxTotal: number,
     private readonly addedProducts: Array<AddedProduct>
   ) {}
 
@@ -80,8 +80,15 @@ class Cart {
   }
 }
 
-const toCartProduct = (addedProduct: AddedProduct) =>
-  new CartProduct(addedProduct.values);
+const toOnlyTaxTotal = (
+  oldTotal: number,
+  { values: { tax, quantity } }: AddedProduct
+) => {
+  const onlyTaxForOne = tax * quantity;
+  return oldTotal + onlyTaxForOne;
+};
+
+const toCartProduct = ({ values }: AddedProduct) => new CartProduct(values);
 const toPrintedProduct = (cartProduct: CartProduct) => cartProduct.print();
 
 class AddedProduct {
