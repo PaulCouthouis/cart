@@ -23,19 +23,19 @@ describe('Use Case: Add product in cart', () => {
       },
     ]);
     thenOnlyTaxTotalIs(7);
-    thenIncludingTaxTotalIs(100);
+    thenIncludingTaxTotalIs(41);
   });
 });
 
 const setup = () => {
-  const cart = new Cart(100, [
-    new AddedProduct({
+  const cart = new Cart([
+    new CartProduct({
       name: 'Apple - Fuji',
       quantity: 2,
       tax: 3,
       excludingTaxPrice: 15,
     }),
-    new AddedProduct({
+    new CartProduct({
       name: 'Muffin Batt - Carrot Spice',
       quantity: 1,
       tax: 1,
@@ -44,56 +44,56 @@ const setup = () => {
   ]);
 
   const thenIncludingTaxTotalIs = (expectedTotal: number) => {
-    expect(cart.getIncludingTaxTotal()).toBe(expectedTotal);
+    expect(cart.includingTaxTotal).toBe(expectedTotal);
   };
 
   const thenOnlyTaxTotalIs = (expectedTotal: number) => {
-    expect(cart.getOnlyTaxTotal()).toBe(expectedTotal);
+    expect(cart.onlyTaxTotal).toBe(expectedTotal);
   };
 
-  const thenProductsInCartAre = (expectedProducts: Array<PrintedProduct>) => {
-    expect(cart.printProducts()).toEqual(expectedProducts);
+  const thenProductsInCartAre = (
+    expectedProducts: Array<CartProduct['values']>
+  ) => {
+    expect(cart.products).toEqual(expectedProducts);
   };
 
   return { thenIncludingTaxTotalIs, thenOnlyTaxTotalIs, thenProductsInCartAre };
 };
 
 class Cart {
-  private readonly onlyTaxTotal = this.addedProducts.reduce(toOnlyTaxTotal, 0);
-  private readonly products = this.addedProducts.map(toCartProduct);
+  readonly products = this.params.map(toValues);
+  readonly onlyTaxTotal = this.products.reduce(toOnlyTaxTotal, 0);
+  readonly includingTaxTotal = this.products.reduce(toIncTaxTotal, 0);
 
-  constructor(
-    private readonly includingTaxTotal: number,
-    private readonly addedProducts: Array<AddedProduct>
-  ) {}
-
-  getIncludingTaxTotal() {
-    return this.includingTaxTotal;
-  }
-
-  getOnlyTaxTotal() {
-    return this.onlyTaxTotal;
-  }
-
-  printProducts() {
-    return this.products.map(toPrintedProduct);
-  }
+  constructor(private readonly params: Array<CartProduct>) {}
 }
 
 const toOnlyTaxTotal = (
   oldTotal: number,
-  { values: { tax, quantity } }: AddedProduct
+  { tax, quantity }: CartProduct['values']
 ) => {
   const onlyTaxForOne = tax * quantity;
   return oldTotal + onlyTaxForOne;
 };
 
-const toCartProduct = ({ values }: AddedProduct) => new CartProduct(values);
-const toPrintedProduct = (cartProduct: CartProduct) => cartProduct.print();
+const toIncTaxTotal = (
+  oldTotal: number,
+  { includingTaxPrice, quantity }: CartProduct['values']
+) => {
+  const includingTaxPriceForOne = includingTaxPrice * quantity;
+  return oldTotal + includingTaxPriceForOne;
+};
 
-class AddedProduct {
+const toValues = ({ values }: CartProduct) => values;
+
+class CartProduct {
+  readonly values = Object.freeze({
+    ...this.params,
+    includingTaxPrice: calculateIncludingTaxPrice(this.params),
+  });
+
   constructor(
-    readonly values: {
+    private readonly params: {
       readonly name: string;
       readonly quantity: number;
       readonly tax: number;
@@ -102,18 +102,9 @@ class AddedProduct {
   ) {}
 }
 
-class CartProduct extends AddedProduct {
-  private readonly includingTaxPrice =
-    this.values.excludingTaxPrice + this.values.tax;
-
-  print() {
-    return Object.freeze({
-      ...this.values,
-      includingTaxPrice: this.includingTaxPrice,
-    });
-  }
-}
-
-type PrintedProduct = ReturnType<CartProduct['print']>;
+const calculateIncludingTaxPrice = ({
+  excludingTaxPrice,
+  tax,
+}: CartProduct['params']) => excludingTaxPrice + tax;
 
 
