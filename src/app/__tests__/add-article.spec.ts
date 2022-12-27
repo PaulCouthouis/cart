@@ -24,21 +24,21 @@ describe('Use Case: Add product in cart', () => {
       {
         name: 'USB Flash Drive 64GB',
         quantity: 1,
-        tax: 1.85,
+        tax: 2.35,
         excludingTaxPrice: 9.18,
-        includingTaxPrice: 11.03,
+        includingTaxPrice: 11.53,
       },
     ]);
-    thenOnlyTaxTotalIs(3.5);
-    thenIncludingTaxTotalIs(37.8);
+    thenOnlyTaxTotalIs(4);
+    thenIncludingTaxTotalIs(38.3);
   });
 });
 
 const setup = () => {
   const cart = new Cart([
-    new CartProduct('Apple - Fuji', 2, 4.37, 'essential'),
-    new CartProduct('The Stranger in the Lifeboat', 1, 16.38, 'book'),
-    new CartProduct('USB Flash Drive 64GB', 1, 9.18, 'other'),
+    new CartProduct('Apple - Fuji', 2, 4.37, 'essential', false),
+    new CartProduct('The Stranger in the Lifeboat', 1, 16.38, 'book', false),
+    new CartProduct('USB Flash Drive 64GB', 1, 9.18, 'other', true),
   ]);
 
   const thenIncludingTaxTotalIs = (expectedTotal: number) => {
@@ -85,14 +85,19 @@ const toIncTaxTotal = (
 };
 class CartProduct {
   private readonly taxPercent = TAX_PERCENT_BY_TYPE[this.type];
-  readonly tax = calculateTax(this.excludingTaxPrice, this.taxPercent);
+  readonly tax = calculateTax(
+    this.excludingTaxPrice,
+    this.taxPercent,
+    this.isImported
+  );
   readonly includingTaxPrice = add(this.tax, this.excludingTaxPrice);
 
   constructor(
     readonly name: string,
     readonly quantity: number,
     readonly excludingTaxPrice: number,
-    private readonly type: 'essential' | 'book' | 'other'
+    private readonly type: 'essential' | 'book' | 'other',
+    private readonly isImported: boolean
   ) {}
 
   print() {
@@ -108,10 +113,23 @@ class CartProduct {
 
 type PrintedCartProduct = ReturnType<CartProduct['print']>;
 
-const calculateTax = (excludingTaxPrice: number, taxPercent: number) => {
-  const multiplied = excludingTaxPrice * taxPercent;
-  return Math.ceil(multiplied * ROUND_COEFF) / ROUND_COEFF;
+const calculateTax = (
+  excludingTaxPrice: number,
+  vatTaxPercent: number,
+  isImported: boolean
+) => {
+  const multipliedWithVatTaxPercent = excludingTaxPrice * vatTaxPercent;
+  const vat = ceilTo(multipliedWithVatTaxPercent, ROUND_COEFF);
+
+  const multipliedWithImportedTaxPercent = isImported
+    ? excludingTaxPrice * 0.05
+    : 0;
+  const importedTax = ceilTo(multipliedWithImportedTaxPercent, ROUND_COEFF);
+
+  return add(vat, importedTax);
 };
+
+const ceilTo = (n: number, coeff: number) => Math.ceil(n * coeff) / coeff;
 
 const ROUND_COEFF = 20;
 
