@@ -1,3 +1,4 @@
+import { BehaviorSubject } from 'rxjs';
 import { Cart } from '../cart/cart';
 import { CartProduct, ProductType } from '../cart/cart-product';
 
@@ -67,34 +68,35 @@ describe('Use Case: Add product in cart', () => {
 });
 
 const setup = () => {
-  let cartProducts: Array<CartProduct>;
-  let cart: Cart;
+  const cartRepository = new FakeCartRepository();
+  const cart$ = new BehaviorSubject<Cart>(new Cart([]));
+
+  const addProductInCart = new AddProductInCart(cartRepository, cart$);
 
   const givenCartWithProducts = (initialProducts: Array<AddProductInput>) => {
-    cartProducts = initialProducts.map(toCartProduct);
+    cartRepository.init(initialProducts);
   };
 
   const whenAddProduct = (addedProduct: AddProductInput) => {
-    const newCartProduct = toCartProduct(addedProduct);
-    cart = new Cart([...cartProducts, newCartProduct]);
+    addProductInCart.handle(addedProduct);
   };
 
   const thenIncludingTaxTotalIs = (expectedTotal: number) => {
-    expect(cart.includingTaxTotal).toBe(expectedTotal);
+    expect(cart$.getValue().includingTaxTotal).toBe(expectedTotal);
   };
 
   const thenOnlyTaxTotalIs = (expectedTotal: number) => {
-    expect(cart.onlyTaxTotal).toBe(expectedTotal);
+    expect(cart$.getValue().onlyTaxTotal).toBe(expectedTotal);
   };
 
   const thenProductLinesEqual = (expectedProductLines: number) => {
-    expect(cart.productLines).toBe(expectedProductLines);
+    expect(cart$.getValue().productLines).toBe(expectedProductLines);
   };
 
   const thenProductsInCartAre = (
     expectedProducts: Array<PrintedCartProduct>
   ) => {
-    expect(cart.printProducts()).toEqual(expectedProducts);
+    expect(cart$.getValue().printProducts()).toEqual(expectedProducts);
   };
 
   return {
@@ -106,6 +108,41 @@ const setup = () => {
     thenProductsInCartAre,
   };
 };
+
+class AddProductInCart {
+  constructor(
+    private readonly cartRepository: CartRepository,
+    private cart$: BehaviorSubject<Cart>
+  ) {}
+
+  handle(addedProduct: AddProductInput) {
+    this.cartRepository.addProduct(addedProduct);
+    this.cart$.next(this.cartRepository.render());
+  }
+}
+
+interface CartRepository {
+  addProduct(addedProduct: AddProductInput): void;
+  render(): Cart;
+}
+class FakeCartRepository implements CartRepository {
+  private currentProducts: Array<CartProduct> = [];
+
+  init(initialProducts: Array<AddProductInput>) {
+    this.currentProducts = initialProducts.map(toCartProduct);
+  }
+
+  addProduct(addedProduct: AddProductInput) {
+    this.currentProducts = [
+      ...this.currentProducts,
+      toCartProduct(addedProduct),
+    ];
+  }
+
+  render() {
+    return new Cart(this.currentProducts);
+  }
+}
 
 type PrintedCartProduct = ReturnType<CartProduct['print']>;
 
