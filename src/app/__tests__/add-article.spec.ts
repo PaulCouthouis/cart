@@ -1,11 +1,38 @@
 describe('Use Case: Add product in cart', () => {
-  it('should add new article in cart', () => {
+  it('should add new product in cart', () => {
     const {
+      givenCartWithProducts,
+      whenAddProduct,
       thenIncludingTaxTotalIs,
       thenOnlyTaxTotalIs,
       thenProductLinesEqual,
       thenProductsInCartAre,
     } = setup();
+
+    givenCartWithProducts([
+      {
+        name: 'Apple - Fuji',
+        quantity: 2,
+        excludingTaxPrice: 4.37,
+        type: 'essential',
+        isImported: false,
+      },
+      {
+        name: 'The Stranger in the Lifeboat',
+        quantity: 1,
+        excludingTaxPrice: 16.38,
+        type: 'book',
+        isImported: false,
+      },
+    ]);
+
+    whenAddProduct({
+      name: 'USB Flash Drive 64GB',
+      quantity: 1,
+      excludingTaxPrice: 9.18,
+      type: 'other',
+      isImported: true,
+    });
 
     thenProductLinesEqual(3);
     thenProductsInCartAre([
@@ -37,11 +64,17 @@ describe('Use Case: Add product in cart', () => {
 });
 
 const setup = () => {
-  const cart = new Cart([
-    new CartProduct('Apple - Fuji', 2, 4.37, 'essential', false),
-    new CartProduct('The Stranger in the Lifeboat', 1, 16.38, 'book', false),
-    new CartProduct('USB Flash Drive 64GB', 1, 9.18, 'other', true),
-  ]);
+  let cartProducts: Array<CartProduct>;
+  let cart: Cart;
+
+  const givenCartWithProducts = (initialProducts: Array<AddProductInput>) => {
+    cartProducts = initialProducts.map(toCartProduct);
+  };
+
+  const whenAddProduct = (addedProduct: AddProductInput) => {
+    const newCartProduct = toCartProduct(addedProduct);
+    cart = new Cart([...cartProducts, newCartProduct]);
+  };
 
   const thenIncludingTaxTotalIs = (expectedTotal: number) => {
     expect(cart.includingTaxTotal).toBe(expectedTotal);
@@ -62,6 +95,8 @@ const setup = () => {
   };
 
   return {
+    givenCartWithProducts,
+    whenAddProduct,
     thenIncludingTaxTotalIs,
     thenOnlyTaxTotalIs,
     thenProductLinesEqual,
@@ -95,6 +130,9 @@ const toIncTaxTotal = (
   const includingTaxPriceForOne = includingTaxPrice * quantity;
   return add(includingTaxPriceForOne, oldTotal);
 };
+
+type ProductType = 'essential' | 'book' | 'other';
+
 class CartProduct {
   private readonly taxPercent = TAX_PERCENT_BY_TYPE[this.type];
   readonly tax = calculateTax(
@@ -108,7 +146,7 @@ class CartProduct {
     readonly name: string,
     readonly quantity: number,
     readonly excludingTaxPrice: number,
-    private readonly type: 'essential' | 'book' | 'other',
+    private readonly type: ProductType,
     private readonly isImported: boolean
   ) {}
 
@@ -161,5 +199,21 @@ const add = (n1: number, n2: number) => {
   return Number(n.toFixed(2)); // fix javascript decimal addition (0.1 + 0.2 !== 0.299999999)
 };
 
+type AddProductInput = {
+  name: string;
+  quantity: number;
+  excludingTaxPrice: number;
+  type: ProductType;
+  isImported: boolean;
+};
 
+const toCartProduct = ({
+  name,
+  quantity,
+  excludingTaxPrice,
+  type,
+  isImported,
+}: AddProductInput): CartProduct => {
+  return new CartProduct(name, quantity, excludingTaxPrice, type, isImported);
+};
 
