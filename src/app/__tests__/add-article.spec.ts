@@ -118,15 +118,20 @@ const calculateTax = (
   vatTaxPercent: number,
   isImported: boolean
 ) => {
-  const multipliedWithVatTaxPercent = excludingTaxPrice * vatTaxPercent;
-  const vat = ceilTo(multipliedWithVatTaxPercent, ROUND_COEFF);
-
-  const multipliedWithImportedTaxPercent = isImported
-    ? excludingTaxPrice * 0.05
-    : 0;
-  const importedTax = ceilTo(multipliedWithImportedTaxPercent, ROUND_COEFF);
+  const vat = calculateVat(excludingTaxPrice, vatTaxPercent);
+  const importedTax = isImported ? calculateImportedTax(excludingTaxPrice) : 0;
 
   return add(vat, importedTax);
+};
+
+const calculateVat = (excludingTaxPrice: number, vatTaxPercent: number) => {
+  const multiplied = excludingTaxPrice * vatTaxPercent;
+  return ceilTo(multiplied, ROUND_COEFF);
+};
+
+const calculateImportedTax = (excludingTaxPrice: number) => {
+  const multiplied = excludingTaxPrice * 0.05;
+  return ceilTo(multiplied, ROUND_COEFF);
 };
 
 const ceilTo = (n: number, coeff: number) => Math.ceil(n * coeff) / coeff;
@@ -143,3 +148,6 @@ const add = (n1: number, n2: number) => {
   const n = n1 + n2;
   return Number(n.toFixed(2)); // fix javascript decimal addition (0.1 + 0.2 !== 0.299999999)
 };
+
+
+
