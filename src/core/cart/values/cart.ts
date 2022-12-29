@@ -5,12 +5,9 @@ export class Cart {
   readonly onlyTaxTotal = this.products.reduce(toOnlyTaxTotal, 0);
   readonly includingTaxTotal = this.products.reduce(toIncTaxTotal, 0);
   readonly productLines = this.products.length;
+  readonly printedProducts = this.products.map(toPrinted);
 
   constructor(readonly products: Array<CartProduct>) {}
-
-  printProducts() {
-    return this.products.map(toPrinted);
-  }
 }
 
 const toOnlyTaxTotal = (oldTotal: number, { tax, quantity }: CartProduct) => {

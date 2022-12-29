@@ -1,4 +1,4 @@
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, map } from 'rxjs';
 import { Cart } from '../cart/values/cart';
 import { CartProduct } from '../cart/values/cart-product';
 import { CartRepository } from '../cart/ports/repository';
@@ -84,21 +84,25 @@ const setup = () => {
   };
 
   const thenIncludingTaxTotalIs = (expectedTotal: number) => {
-    expect(cart$.getValue().includingTaxTotal).toBe(expectedTotal);
+    const { includingTaxTotal } = cart$.getValue();
+    expect(includingTaxTotal).toBe(expectedTotal);
   };
 
   const thenOnlyTaxTotalIs = (expectedTotal: number) => {
-    expect(cart$.getValue().onlyTaxTotal).toBe(expectedTotal);
+    const { onlyTaxTotal } = cart$.getValue();
+    expect(onlyTaxTotal).toBe(expectedTotal);
   };
 
   const thenProductLinesEqual = (expectedProductLines: number) => {
-    expect(cart$.getValue().productLines).toBe(expectedProductLines);
+    const { productLines } = cart$.getValue();
+    expect(productLines).toBe(expectedProductLines);
   };
 
   const thenProductsInCartAre = (
     expectedProducts: Array<PrintedCartProduct>
   ) => {
-    expect(cart$.getValue().printProducts()).toEqual(expectedProducts);
+    const { printedProducts } = cart$.getValue();
+    expect(printedProducts).toEqual(expectedProducts);
   };
 
   return {
