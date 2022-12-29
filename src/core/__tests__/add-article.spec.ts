@@ -1,6 +1,8 @@
 import { BehaviorSubject } from 'rxjs';
-import { Cart } from '../cart/cart';
-import { CartProduct, ProductType } from '../cart/cart-product';
+import { Cart } from '../cart/values/cart';
+import { CartProduct } from '../cart/values/cart-product';
+import { CartRepository } from '../cart/ports/repository';
+import { AddProductInCart, AddProductInput } from '../cart/actions/add-product';
 
 describe('Use Case: Add product in cart', () => {
   it('should add new product in cart', () => {
@@ -109,22 +111,6 @@ const setup = () => {
   };
 };
 
-class AddProductInCart {
-  constructor(
-    private readonly cartRepository: CartRepository,
-    private cart$: BehaviorSubject<Cart>
-  ) {}
-
-  handle(addedProduct: AddProductInput) {
-    this.cartRepository.addProduct(addedProduct);
-    this.cart$.next(this.cartRepository.render());
-  }
-}
-
-interface CartRepository {
-  addProduct(addedProduct: AddProductInput): void;
-  render(): Cart;
-}
 class FakeCartRepository implements CartRepository {
   private currentProducts: Array<CartProduct> = [];
 
@@ -145,14 +131,6 @@ class FakeCartRepository implements CartRepository {
 }
 
 type PrintedCartProduct = ReturnType<CartProduct['print']>;
-
-type AddProductInput = {
-  name: string;
-  quantity: number;
-  excludingTaxPrice: number;
-  type: ProductType;
-  isImported: boolean;
-};
 
 const toCartProduct = ({
   name,
