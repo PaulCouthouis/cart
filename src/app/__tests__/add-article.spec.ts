@@ -3,9 +3,11 @@ describe('Use Case: Add product in cart', () => {
     const {
       thenIncludingTaxTotalIs,
       thenOnlyTaxTotalIs,
+      thenProductLinesEqual,
       thenProductsInCartAre,
     } = setup();
 
+    thenProductLinesEqual(3);
     thenProductsInCartAre([
       {
         name: 'Apple - Fuji',
@@ -49,18 +51,28 @@ const setup = () => {
     expect(cart.onlyTaxTotal).toBe(expectedTotal);
   };
 
+  const thenProductLinesEqual = (expectedProductLines: number) => {
+    expect(cart.productLines).toBe(expectedProductLines);
+  };
+
   const thenProductsInCartAre = (
     expectedProducts: Array<PrintedCartProduct>
   ) => {
     expect(cart.printProducts()).toEqual(expectedProducts);
   };
 
-  return { thenIncludingTaxTotalIs, thenOnlyTaxTotalIs, thenProductsInCartAre };
+  return {
+    thenIncludingTaxTotalIs,
+    thenOnlyTaxTotalIs,
+    thenProductLinesEqual,
+    thenProductsInCartAre,
+  };
 };
 
 class Cart {
   readonly onlyTaxTotal = this.products.reduce(toOnlyTaxTotal, 0);
   readonly includingTaxTotal = this.products.reduce(toIncTaxTotal, 0);
+  readonly productLines = this.products.length;
 
   constructor(readonly products: Array<CartProduct>) {}
 
