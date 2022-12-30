@@ -1,27 +1,26 @@
-# Cart
+# Kata Pacifica
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 15.0.4.
+Temps passé: environ 8h
 
-## Development server
+## Taches Terminé
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+- Use case d'ajout dans le panier en typescript pure dans le cas d'un nouveau produit
+- composant Angular Cart qui affiche le panier et ses valeurs
 
-## Code scaffolding
+## Taches non terminés 
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+- Ajout dans le panier d'un produit déjà ajouté (incrémentation de la quantité)
+- Affichage de la liste des produits
+- Filtrage par catégorie
+- Routage
+- Montage et injection des classes dans le projet angular
+- Règles de gestions diverses
+- Css
 
-## Build
+## Comment lire le code 
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+Pas de démo sur browser disponible, vous pouvez :
+- lire le fichier de test "add-product-in-cart.spec.ts" pour comprendre la partie core
+- lire le composant "cart.component.ts" directement
 
-## Running unit tests
-
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Running end-to-end tests
-
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+Le code a été écrit en TDD, pour comprendre l'écriture du code par étape, vous pouvez lire commit par commit
