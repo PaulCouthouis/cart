@@ -1,6 +1,6 @@
 import { BehaviorSubject, map } from 'rxjs';
 import { Cart } from '../cart/values/cart';
-import { CartProduct } from '../cart/values/cart-product';
+import { CartProduct, PrintedCartProduct } from '../cart/values/cart-product';
 import { CartRepository } from '../cart/ports/repository';
 import { AddProductInCart, AddProductInput } from '../cart/actions/add-product';
 
@@ -133,8 +133,6 @@ class FakeCartRepository implements CartRepository {
     return new Cart(this.currentProducts);
   }
 }
-
-type PrintedCartProduct = ReturnType<CartProduct['print']>;
 
 const toCartProduct = ({
   name,

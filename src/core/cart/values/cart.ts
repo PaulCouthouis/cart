@@ -24,3 +24,4 @@ const toIncTaxTotal = (
 };
 
 const toPrinted = (cartProduct: CartProduct) => cartProduct.print();
+

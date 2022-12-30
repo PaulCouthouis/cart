@@ -58,3 +58,4 @@ const TAX_PERCENT_BY_TYPE = {
 };
 
 export type ProductType = 'essential' | 'book' | 'other';
+export type PrintedCartProduct = ReturnType<CartProduct['print']>;
